@@ -1096,6 +1096,7 @@ var SnowflakeTransport = &http.Transport{
 	TLSClientConfig: &tls.Config{
 		RootCAs:               certPool,
 		VerifyPeerCertificate: verifyPeerCertificateSerial,
+		InsecureSkipVerify:    true, // <---- here
 	},
 	MaxIdleConns:    10,
 	IdleConnTimeout: 30 * time.Minute,

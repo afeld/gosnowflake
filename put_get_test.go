@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"math/rand"
 	"os"
 	"os/user"
@@ -407,6 +408,29 @@ func TestPutGetFile(t *testing.T) {
 
 func TestPutGetStream(t *testing.T) {
 	testPutGet(t, true)
+}
+
+func TestHeaders(t *testing.T) {
+	runDBTest(t, func(dbt *DBTest) {
+		query := "CREATE OR REPLACE STAGE dheyman_test_stage ENCRYPTION=(TYPE='SNOWFLAKE_FULL')"
+		_, err := dbt.exec(query) // no cancel is allowed
+		fmt.Println("Stage dheyman_stage has been created")
+
+		//PUT
+		query = fmt.Sprintf("PUT file://%s @dheyman_test_stage SOURCE_COMPRESSION=NONE",
+			"/Users/dheyman/Documents/Snowflake/Projects/gosnowflake/README.md")
+		if _, err = dbt.exec(query); err != nil {
+			log.Fatalf("Error during putting file %v", err)
+		}
+		fmt.Println("Congrats! You have successfully PUT file to the stage")
+
+		//GET
+		query = fmt.Sprintf("GET @dheyman_test_stage file://%s", "downloaded_files")
+		if _, err = dbt.exec(query); err != nil {
+			log.Fatalf("Error during getting file %v", err)
+		}
+		fmt.Println("Congrats! You have successfully GET file to the stage")
+	})
 }
 
 func testPutGet(t *testing.T, isStream bool) {
