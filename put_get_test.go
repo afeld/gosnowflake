@@ -253,6 +253,11 @@ func TestPutLocalFile(t *testing.T) {
 }
 
 func TestPutGetWithAutoCompressFalse(t *testing.T) {
+	level := logger.GetLogLevel()
+	_ = logger.SetLogLevel("debug")
+	defer func() {
+		_ = logger.SetLogLevel(level)
+	}()
 	tmpDir := t.TempDir()
 	testData := filepath.Join(tmpDir, "data.txt")
 	f, err := os.Create(testData)
@@ -267,14 +272,17 @@ func TestPutGetWithAutoCompressFalse(t *testing.T) {
 		assertNilF(t, f.Close())
 	}()
 
+	fmt.Printf("Starting TestPutGetWithAutoCompressFalse at %v\n", time.Now())
 	runDBTest(t, func(dbt *DBTest) {
 		stageDir := "test_put_uncompress_file_" + randomString(10)
 		dbt.mustExec("rm @~/" + stageDir)
 
 		// PUT test
+		fmt.Printf("Running PUT at %v\n", time.Now())
 		sqlText := fmt.Sprintf("put 'file://%v' @~/%v auto_compress=FALSE", testData, stageDir)
 		sqlText = strings.ReplaceAll(sqlText, "\\", "\\\\")
 		dbt.mustExec(sqlText)
+		fmt.Printf("Finished PUT at %v\n", time.Now())
 		defer dbt.mustExec("rm @~/" + stageDir)
 		rows := dbt.mustQuery("ls @~/" + stageDir)
 		defer func() {
@@ -327,6 +335,7 @@ func TestPutGetWithAutoCompressFalse(t *testing.T) {
 }
 
 func TestPutOverwrite(t *testing.T) {
+	fmt.Printf("Starting TestPutOverwrite at %v\n", time.Now())
 	tmpDir := t.TempDir()
 	testData := filepath.Join(tmpDir, "data.txt")
 	f, err := os.Create(testData)

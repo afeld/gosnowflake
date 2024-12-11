@@ -3,6 +3,7 @@
 package gosnowflake
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -74,7 +76,12 @@ func (util *snowflakeGcsClient) getFileHeader(meta *fileMetadata, filename strin
 		if meta.mockGcsClient != nil {
 			client = meta.mockGcsClient
 		}
-		resp, err := client.Do(req)
+		req.Close = true
+		r := newRetryHTTP(context.Background(), client, http.NewRequest, URL, gcsHeaders, time.Second, 3, defaultTimeProvider, nil) // TODO replace with timeout context
+		r.doHead()
+		fmt.Printf("Before calling HEAD to GCS\n")
+		resp, err := r.execute()
+		fmt.Printf("After calling HEAD to GCS, err: %v\n", err)
 		if err != nil {
 			return nil, err
 		}
@@ -394,6 +401,6 @@ func (util *snowflakeGcsClient) isTokenExpired(resp *http.Response) bool {
 
 func newGcsClient() gcsAPI {
 	return &http.Client{
-		Transport: SnowflakeTransport,
+		//Transport: SnowflakeTransport,
 	}
 }
