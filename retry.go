@@ -282,11 +282,6 @@ func (r *retryHTTP) doPost() *retryHTTP {
 	return r
 }
 
-func (r *retryHTTP) doHead() *retryHTTP {
-	r.method = "HEAD"
-	return r
-}
-
 func (r *retryHTTP) setBody(body []byte) *retryHTTP {
 	r.bodyCreator = func() ([]byte, error) {
 		return body, nil
