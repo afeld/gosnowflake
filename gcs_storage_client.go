@@ -3,7 +3,6 @@
 package gosnowflake
 
 import (
-	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -78,12 +77,7 @@ func (util *snowflakeGcsClient) getFileHeader(meta *fileMetadata, filename strin
 		if meta.mockGcsClient != nil {
 			client = meta.mockGcsClient
 		}
-		req.Close = true
-		r := newRetryHTTP(context.Background(), client, http.NewRequest, URL, gcsHeaders, time.Second, 3, defaultTimeProvider, nil) // TODO replace with timeout context
-		r.doHead()
-		fmt.Printf("Before calling HEAD to GCS\n")
-		resp, err := r.execute()
-		fmt.Printf("After calling HEAD to GCS, err: %v\n", err)
+		resp, err := client.Do(req)
 		if err != nil {
 			return nil, err
 		}
@@ -403,18 +397,20 @@ func (util *snowflakeGcsClient) isTokenExpired(resp *http.Response) bool {
 
 func newGcsClient() gcsAPI {
 	return &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				RootCAs:               certPool,
-				VerifyPeerCertificate: verifyPeerCertificateSerial,
-			},
-			MaxIdleConns:    10,
-			IdleConnTimeout: 30 * time.Minute,
-			Proxy:           http.ProxyFromEnvironment,
-			DialContext: (&net.Dialer{
-				Timeout:   30 * time.Second,
-				KeepAlive: 30 * time.Second,
-			}).DialContext,
-		},
+		Transport: gcsTransport,
 	}
+}
+
+var gcsTransport = &http.Transport{
+	TLSClientConfig: &tls.Config{
+		RootCAs:               certPool,
+		VerifyPeerCertificate: verifyPeerCertificateSerial,
+	},
+	MaxIdleConns:    10,
+	IdleConnTimeout: 30 * time.Minute,
+	Proxy:           http.ProxyFromEnvironment,
+	DialContext: (&net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}).DialContext,
 }
